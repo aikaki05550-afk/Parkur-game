@@ -3,124 +3,323 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Brain Puzzle Game</title>
+    <title>3D Chicken Puzzle</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+        #canvas { display: block; }
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 18px;
         }
-        .container {
-            background: white;
+        #levelInfo { margin-bottom: 10px; }
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        #nextLevel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: #0f0;
             padding: 40px;
             border-radius: 10px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
             text-align: center;
-            max-width: 500px;
-        }
-        h1 {
-            color: #333;
-            margin-bottom: 30px;
-        }
-        .puzzle {
             font-size: 24px;
-            margin: 30px 0;
-            color: #555;
-        }
-        input {
-            padding: 10px;
-            font-size: 16px;
-            width: 200px;
-            border: 2px solid #667eea;
-            border-radius: 5px;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 15px;
-        }
-        button:hover {
-            background: #764ba2;
-        }
-        .message {
-            margin-top: 20px;
-            font-size: 18px;
-            font-weight: bold;
-        }
-        .correct {
-            color: #27ae60;
-        }
-        .incorrect {
-            color: #e74c3c;
+            display: none;
+            z-index: 100;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🧠 Brain Puzzle Game</h1>
-        <div class="puzzle" id="puzzle"></div>
-        <input type="text" id="answer" placeholder="Your answer">
-        <br>
-        <button onclick="checkAnswer()">Check Answer</button>
-        <button onclick="nextPuzzle()">Next Puzzle</button>
-        <div class="message" id="message"></div>
-        <div id="score" style="margin-top: 20px; font-size: 16px;"></div>
+    <div id="ui">
+        <div id="levelInfo">Level: <span id="level">1</span>/30</div>
+        <div>Biom: <span id="biom">Winter</span></div>
     </div>
+    <div id="controls">
+        <div>WASD - Move</div>
+        <div>SPACE - Jump</div>
+        <div>Mouse - Look Around</div>
+    </div>
+    <div id="nextLevel">Level Complete!<br><br>Press SPACE to continue</div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        const puzzles = [
-            { question: "What is 5 + 3 × 2?", answer: "11" },
-            { question: "I have cities but no houses. What am I?", answer: "map" },
-            { question: "What is 2^3 + 4?", answer: "12" },
-            { question: "The more you take, the more you leave behind. What am I?", answer: "footprints" },
-            { question: "What has hands but cannot clap?", answer: "clock" }
-        ];
+        // Game variables
+        let scene, camera, renderer;
+        let chicken, currentLevel = 1;
+        let bioms = ['Winter', 'Autumn', 'Summer'];
+        let currentBiom = 0;
+        let levelComplete = false;
+        let canJump = true;
 
-        let currentPuzzle = 0;
-        let score = 0;
+        // Keyboard input
+        const keys = {};
+        window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+        window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
-        function loadPuzzle() {
-            const puzzle = puzzles[currentPuzzle];
-            document.getElementById("puzzle").textContent = puzzle.question;
-            document.getElementById("answer").value = "";
-            document.getElementById("message").textContent = "";
+        // Initialize game
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            // Lighting
+            const ambLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambLight);
+            
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(50, 50, 50);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            scene.add(dirLight);
+
+            // Create chicken player
+            createChicken();
+            
+            // Load level
+            loadLevel(currentLevel);
+
+            // Mouse lock
+            document.addEventListener('click', () => renderer.domElement.requestPointerLock());
+            document.addEventListener('mousemove', onMouseMove);
+
+            animate();
+            window.addEventListener('resize', onWindowResize);
         }
 
-        function checkAnswer() {
-            const userAnswer = document.getElementById("answer").value.toLowerCase().trim();
-            const correctAnswer = puzzles[currentPuzzle].answer.toLowerCase();
-            const messageEl = document.getElementById("message");
+        function createChicken() {
+            const group = new THREE.Group();
+            
+            // Body
+            const bodyGeom = new THREE.SphereGeometry(0.5, 16, 16);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0xffcc00 });
+            const body = new THREE.Mesh(bodyGeom, bodyMat);
+            body.castShadow = true;
+            body.receiveShadow = true;
+            group.add(body);
 
-            if (userAnswer === correctAnswer) {
-                messageEl.textContent = "✓ Correct!";
-                messageEl.className = "message correct";
-                score++;
-            } else {
-                messageEl.textContent = `✗ Wrong! The answer is: ${puzzles[currentPuzzle].answer}`;
-                messageEl.className = "message incorrect";
+            // Head
+            const headGeom = new THREE.SphereGeometry(0.25, 16, 16);
+            const head = new THREE.Mesh(headGeom, bodyMat);
+            head.position.y = 0.6;
+            head.castShadow = true;
+            group.add(head);
+
+            // Eyes
+            const eyeGeom = new THREE.SphereGeometry(0.1, 8, 8);
+            const eyeMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
+            const eye1 = new THREE.Mesh(eyeGeom, eyeMat);
+            eye1.position.set(-0.1, 0.8, 0.2);
+            group.add(eye1);
+
+            group.position.y = 2;
+            group.velocity = new THREE.Vector3();
+            group.canWalk = true;
+            
+            scene.add(group);
+            chicken = group;
+        }
+
+        function loadLevel(levelNum) {
+            // Clear old level
+            scene.children = scene.children.filter(obj => obj !== chicken && obj.type === 'Light');
+            
+            currentBiom = (levelNum - 1) % 3;
+            document.getElementById('level').textContent = levelNum;
+            document.getElementById('biom').textContent = bioms[currentBiom];
+            
+            // Set sky color based on biom
+            const colors = [0x87ceeb, 0xff8c42, 0xffffcc];
+            scene.background = new THREE.Color(colors[currentBiom]);
+            
+            levelComplete = false;
+            canJump = true;
+
+            // Difficulty increases with level
+            const difficulty = Math.min(levelNum, 10);
+            
+            // Create level platforms
+            createLevelPlatforms(difficulty, currentBiom);
+            
+            // Create portal
+            createPortal();
+            
+            // Reset chicken
+            chicken.position.set(0, 2, 0);
+            chicken.velocity.set(0, 0, 0);
+        }
+
+        function createLevelPlatforms(difficulty, biom) {
+            const platformCount = 5 + difficulty;
+            
+            for (let i = 0; i < platformCount; i++) {
+                const x = (Math.random() - 0.5) * 40;
+                const y = 2 + i * 3 + Math.random() * 5;
+                const z = (Math.random() - 0.5) * 40;
+                const size = 3 - difficulty * 0.1;
+                
+                createPlatform(x, y, z, size, biom);
+                
+                // Add walls for walking on
+                if (i % 3 === 0) {
+                    createWall(x + 10, y, z, biom);
+                    createWall(x - 10, y, z, biom);
+                }
             }
-            updateScore();
+            
+            // Ground
+            createPlatform(0, -1, 0, 100, biom);
         }
 
-        function nextPuzzle() {
-            currentPuzzle = (currentPuzzle + 1) % puzzles.length;
-            loadPuzzle();
+        function createPlatform(x, y, z, size, biom) {
+            const colors = [0xffffff, 0x8b4513, 0x90ee90];
+            const geom = new THREE.BoxGeometry(size, 0.5, size);
+            const mat = new THREE.MeshStandardMaterial({ color: colors[biom] });
+            const platform = new THREE.Mesh(geom, mat);
+            platform.position.set(x, y, z);
+            platform.castShadow = true;
+            platform.receiveShadow = true;
+            platform.userData.isWalkable = true;
+            scene.add(platform);
         }
 
-        function updateScore() {
-            document.getElementById("score").textContent = `Score: ${score}/${puzzles.length}`;
+        function createWall(x, y, z, biom) {
+            const colors = [0xcccccc, 0xa0522d, 0x7cb342];
+            const geom = new THREE.BoxGeometry(2, 8, 2);
+            const mat = new THREE.MeshStandardMaterial({ color: colors[biom] });
+            const wall = new THREE.Mesh(geom, mat);
+            wall.position.set(x, y, z);
+            wall.castShadow = true;
+            wall.receiveShadow = true;
+            wall.userData.isWalkable = true;
+            scene.add(wall);
         }
 
-        loadPuzzle();
+        function createPortal() {
+            const geom = new THREE.TorusGeometry(2, 0.5, 16, 100);
+            const mat = new THREE.MeshStandardMaterial({ 
+                color: 0x00ff00, 
+                emissive: 0x00aa00,
+                metalness: 0.8
+            });
+            const portal = new THREE.Mesh(geom, mat);
+            portal.position.set((Math.random() - 0.5) * 30, 25, (Math.random() - 0.5) * 30);
+            portal.castShadow = true;
+            portal.userData.isPortal = true;
+            scene.add(portal);
+        }
+
+        function onMouseMove(e) {
+            if (document.pointerLockElement) {
+                camera.rotation.order = 'YXZ';
+                camera.rotation.y -= e.movementX * 0.01;
+                camera.rotation.x -= e.movementY * 0.01;
+                
+                const maxX = Math.PI / 2;
+                if (camera.rotation.x > maxX) camera.rotation.x = maxX;
+                if (camera.rotation.x < -maxX) camera.rotation.x = -maxX;
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Movement
+            const speed = 0.2;
+            if (keys['w']) chicken.position.z -= speed;
+            if (keys['s']) chicken.position.z += speed;
+            if (keys['a']) chicken.position.x -= speed;
+            if (keys['d']) chicken.position.x += speed;
+            if (keys[' '] && canJump) {
+                chicken.velocity.y = 0.5;
+                canJump = false;
+            }
+
+            // Gravity
+            chicken.velocity.y -= 0.01;
+            chicken.position.y += chicken.velocity.y;
+
+            // Collision detection
+            let onGround = false;
+            scene.children.forEach(obj => {
+                if (obj.userData.isWalkable && obj !== chicken) {
+                    const dist = chicken.position.distanceTo(obj.position);
+                    if (dist < 3 && chicken.position.y >= obj.position.y - 1) {
+                        chicken.position.y = obj.position.y + 1;
+                        chicken.velocity.y = 0;
+                        onGround = true;
+                        canJump = true;
+                    }
+                }
+                
+                // Portal collision
+                if (obj.userData.isPortal) {
+                    const dist = chicken.position.distanceTo(obj.position);
+                    if (dist < 3) {
+                        levelComplete = true;
+                        document.getElementById('nextLevel').style.display = 'block';
+                    }
+                }
+            });
+
+            // Rotation towards movement
+            if (keys['w'] || keys['s'] || keys['a'] || keys['d']) {
+                chicken.rotation.x += 0.05;
+            }
+
+            // Camera follow
+            const cameraOffset = new THREE.Vector3(0, 3, 8);
+            cameraOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), camera.rotation.y);
+            camera.position.lerp(chicken.position.clone().add(cameraOffset), 0.1);
+            camera.lookAt(chicken.position.clone().add(new THREE.Vector3(0, 1, 0)));
+
+            // Reset on fall
+            if (chicken.position.y < -50) {
+                loadLevel(currentLevel);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Next level
+        window.addEventListener('keydown', e => {
+            if (e.key === ' ' && levelComplete && currentLevel < 30) {
+                currentLevel++;
+                document.getElementById('nextLevel').style.display = 'none';
+                loadLevel(currentLevel);
+            } else if (e.key === ' ' && levelComplete && currentLevel === 30) {
+                alert('🎉 Game Complete! All 30 levels finished!');
+                currentLevel = 1;
+                document.getElementById('nextLevel').style.display = 'none';
+                loadLevel(currentLevel);
+            }
+        });
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        init();
     </script>
 </body>
 </html>

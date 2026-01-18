@@ -1,0 +1,53 @@
+/* Container for all characters */
+.characters-container {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    padding: 40px;
+    perspective: 1000px;
+}
+
+/* Base style for all characters */
+.character {
+    width: 100px;
+    height: 100px;
+    position: relative;
+    transform-style: preserve-3d;
+}
+
+/* Yellow chicken */
+.chicken {
+    background-color: #FFD700;
+    border: 2px solid #FFA500;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    animation: float 3s ease-in-out infinite;
+}
+
+/* Brown bear */
+.bear {
+    background-color: #8B4513;
+    border: 2px solid #654321;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    animation: float 3s ease-in-out infinite 0.2s;
+}
+
+/* White fox */
+.fox {
+    background-color: #F5F5F5;
+    border: 2px solid #E0E0E0;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    animation: float 3s ease-in-out infinite 0.4s;
+}
+
+/* Floating animation */
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px) rotateX(0deg) rotateY(0deg);
+    }
+    50% {
+        transform: translateY(-20px) rotateX(5deg) rotateY(5deg);
+    }
+}
