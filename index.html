@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brain Puzzle Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 500px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .puzzle {
+            font-size: 24px;
+            margin: 30px 0;
+            color: #555;
+        }
+        input {
+            padding: 10px;
+            font-size: 16px;
+            width: 200px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        button:hover {
+            background: #764ba2;
+        }
+        .message {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .correct {
+            color: #27ae60;
+        }
+        .incorrect {
+            color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 Brain Puzzle Game</h1>
+        <div class="puzzle" id="puzzle"></div>
+        <input type="text" id="answer" placeholder="Your answer">
+        <br>
+        <button onclick="checkAnswer()">Check Answer</button>
+        <button onclick="nextPuzzle()">Next Puzzle</button>
+        <div class="message" id="message"></div>
+        <div id="score" style="margin-top: 20px; font-size: 16px;"></div>
+    </div>
+
+    <script>
+        const puzzles = [
+            { question: "What is 5 + 3 × 2?", answer: "11" },
+            { question: "I have cities but no houses. What am I?", answer: "map" },
+            { question: "What is 2^3 + 4?", answer: "12" },
+            { question: "The more you take, the more you leave behind. What am I?", answer: "footprints" },
+            { question: "What has hands but cannot clap?", answer: "clock" }
+        ];
+
+        let currentPuzzle = 0;
+        let score = 0;
+
+        function loadPuzzle() {
+            const puzzle = puzzles[currentPuzzle];
+            document.getElementById("puzzle").textContent = puzzle.question;
+            document.getElementById("answer").value = "";
+            document.getElementById("message").textContent = "";
+        }
+
+        function checkAnswer() {
+            const userAnswer = document.getElementById("answer").value.toLowerCase().trim();
+            const correctAnswer = puzzles[currentPuzzle].answer.toLowerCase();
+            const messageEl = document.getElementById("message");
+
+            if (userAnswer === correctAnswer) {
+                messageEl.textContent = "✓ Correct!";
+                messageEl.className = "message correct";
+                score++;
+            } else {
+                messageEl.textContent = `✗ Wrong! The answer is: ${puzzles[currentPuzzle].answer}`;
+                messageEl.className = "message incorrect";
+            }
+            updateScore();
+        }
+
+        function nextPuzzle() {
+            currentPuzzle = (currentPuzzle + 1) % puzzles.length;
+            loadPuzzle();
+        }
+
+        function updateScore() {
+            document.getElementById("score").textContent = `Score: ${score}/${puzzles.length}`;
+        }
+
+        loadPuzzle();
+    </script>
+</body>
+</html>
