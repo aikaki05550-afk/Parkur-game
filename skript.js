@@ -1,58 +1,67 @@
-// Chicken Puzzle Game
-class ChickenPuzzle {
-    constructor() {
-        this.score = 0;
-        this.level = 1;
-        this.grid = [];
-        this.gridSize = 4;
-        this.init();
+/**
+ * Brain Game Utilities
+ * Provides helper functions for the Brain Puzzle Game
+ */
+
+class GameUtilities {
+    /**
+     * Validate user answer against correct answer
+     * @param {string} userAnswer - User's input
+     * @param {string} correctAnswer - Expected answer
+     * @returns {boolean} - True if answers match
+     */
+    static validateAnswer(userAnswer, correctAnswer) {
+        if (!userAnswer || !correctAnswer) return false;
+        return userAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
     }
 
-    init() {
-        this.createGrid();
-        this.render();
+    /**
+     * Calculate accuracy percentage
+     * @param {number} correct - Number of correct answers
+     * @param {number} total - Total number of questions
+     * @returns {number} - Accuracy percentage
+     */
+    static calculateAccuracy(correct, total) {
+        if (total === 0) return 0;
+        return Math.round((correct / total) * 100);
     }
 
-    createGrid() {
-        this.grid = [];
-        for (let i = 0; i < this.gridSize * this.gridSize; i++) {
-            this.grid.push(Math.floor(Math.random() * 3));
-        }
+    /**
+     * Store game score in localStorage
+     * @param {number} score - Player's score
+     * @param {number} total - Total possible score
+     */
+    static saveScore(score, total) {
+        const gameData = {
+            score,
+            total,
+            date: new Date().toISOString()
+        };
+        localStorage.setItem('brainGameScore', JSON.stringify(gameData));
     }
 
-    checkMatch(index) {
-        const row = Math.floor(index / this.gridSize);
-        const col = index % this.gridSize;
-        let matches = 0;
-
-        // Check horizontal
-        if (this.grid[index] === this.grid[index - 1] && 
-                this.grid[index] === this.grid[index + 1]) {
-            matches++;
-        }
-
-        // Check vertical
-        if (this.grid[index] === this.grid[index - this.gridSize] && 
-                this.grid[index] === this.grid[index + this.gridSize]) {
-            matches++;
-        }
-
-        return matches > 0;
+    /**
+     * Retrieve last game score from localStorage
+     * @returns {object|null} - Game data or null if not found
+     */
+    static getLastScore() {
+        const data = localStorage.getItem('brainGameScore');
+        return data ? JSON.parse(data) : null;
     }
 
-    click(index) {
-        if (this.checkMatch(index)) {
-            this.score += 10;
-            this.grid[index] = -1;
-            this.render();
-        }
-    }
-
-    render() {
-        console.log(`Level: ${this.level} | Score: ${this.score}`);
-        console.log(this.grid);
+    /**
+     * Format time elapsed
+     * @param {number} seconds - Time in seconds
+     * @returns {string} - Formatted time string
+     */
+    static formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}m ${secs}s`;
     }
 }
 
-// Start game
-const game = new ChickenPuzzle();
+// Export for use in HTML
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = GameUtilities;
+}
