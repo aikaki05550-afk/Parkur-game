@@ -1,174 +1,229 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Brain Puzzle Game</title>
-    <link rel="stylesheet" href="style.css">
+    <title>3D Parkour: Girl & Boy</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #000; }
+        #menu {
+            position: absolute; inset: 0; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            background: radial-gradient(circle, #2c3e50, #000); color: white; z-index: 100;
+        }
+        #ui {
+            position: absolute; top: 20px; left: 20px; color: white;
+            font-size: 26px; display: none; text-shadow: 2px 2px #000; font-weight: bold;
+        }
+        .box { background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.2); }
+        button {
+            padding: 15px 60px; font-size: 22px; cursor: pointer; margin-top: 20px;
+            background: #27ae60; border: none; color: white; border-radius: 50px;
+            transition: 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+        button:hover { background: #2ecc71; transform: scale(1.05); }
+        select { padding: 12px; margin: 10px; font-size: 18px; border-radius: 8px; width: 250px; cursor: pointer; }
+        label { font-size: 18px; display: block; margin-top: 15px; opacity: 0.9; }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🧠 Brain Puzzle Game</h1>
-            <div class="stats">
-                <span class="stat-item">Level: <span id="level">1</span></span>
-                <span class="stat-item">Score: <span id="score">0</span></span>
-            </div>
-        </div>
 
-        <div class="puzzle-section">
-            <div class="puzzle-counter">Question <span id="current">1</span> of <span id="total">5</span></div>
-            <div class="puzzle" id="puzzle"></div>
-            <input type="text" id="answer" placeholder="Enter your answer..." autocomplete="off">
-            <div class="input-hint" id="hint"></div>
-        </div>
-
-        <div class="button-group">
-            <button class="btn btn-primary" onclick="checkAnswer()">Check Answer</button>
-            <button class="btn btn-secondary" onclick="skipPuzzle()">Skip</button>
-        </div>
-
-        <div class="message" id="message"></div>
-
-        <div class="progress-bar">
-            <div class="progress-fill" id="progress"></div>
-        </div>
-
-        <div class="footer">
-            <button class="btn btn-small" onclick="resetGame()">Reset Game</button>
-        </div>
+<div id="menu">
+    <div class="box">
+        <h1>BLOCK PARKOUR 3D</h1>
+        <label>Выбери персонажа:</label>
+        <select id="gender">
+            <option value="girl">👧 Девочка (Длинные волосы)</option>
+            <option value="boy">👦 Мальчик (Короткая стрижка)</option>
+        </select>
+        <label>Цвет одежды:</label>
+        <select id="skin">
+            <option value="0xff69b4">Нежно-розовый</option>
+            <option value="0x3498db">Ярко-синий</option>
+            <option value="0x9b59b6">Фиолетовый</option>
+            <option value="0xe67e22">Оранжевый</option>
+        </select>
+        <button id="startBtn">ПОЕХАЛИ!</button>
     </div>
+</div>
 
-    <script src="skript.js"></script>
-    <script>
-        const puzzles = [
-            { question: "What is 5 + 3 × 2?", answer: "11", hint: "Remember order of operations" },
-            { question: "I have cities but no houses. What am I?", answer: "map", hint: "It's a representation" },
-            { question: "What is 2^3 + 4?", answer: "12", hint: "2 to the power of 3 is 8" },
-            { question: "The more you take, the more you leave behind. What am I?", answer: "footprints", hint: "Walking leaves marks" },
-            { question: "What has hands but cannot clap?", answer: "clock", hint: "Tells time" },
-            { question: "I speak without a mouth and hear without ears. I have no body, but I come alive with wind. What am I?", answer: "echo", hint: "Sound reflection" },
-            { question: "What can travel around the world while staying in a corner?", answer: "stamp", hint: "Found on mail" },
-            { question: "I'm tall when I'm young and short when I'm old. What am I?", answer: "candle", hint: "Burns from top" },
-            { question: "What has a face and two hands but no arms or legs?", answer: "watch", hint: "Similar to clock" },
-            { question: "What can you catch but not throw?", answer: "cold", hint: "You get sick with it" },
-            { question: "What has keys but no locks, space but no room, and you can enter but can't go inside?", answer: "keyboard", hint: "Computer device" },
-            { question: "What is 15 ÷ 3 + 2 × 4?", answer: "13", hint: "Division and multiplication first" },
-            { question: "I have cities but no houses, forests but no trees, and water but no fish. What am I?", answer: "globe", hint: "You can hold it in your hands" },
-            { question: "What gets wet while drying?", answer: "towel", hint: "Used after shower" },
-            { question: "What has a head and a tail but no body?", answer: "coin", hint: "Used for payment" },
-            { question: "What comes once in a minute, twice in a moment, and never in one thousand years?", answer: "m", hint: "Look at the letters in the words" },
-            { question: "If you have me, you want to share me. If you share me, you haven't got me. What am I?", answer: "secret", hint: "Can't tell anyone" },
-            { question: "What is 7 × 6 - 5 + 3?", answer: "40", hint: "Multiplication first" },
-            { question: "I am not alive, but I grow. I don't have lungs, but I need air. What am I?", answer: "fire", hint: "Requires oxygen" },
-            { question: "What can run but never walks, has a mouth but never talks, has a head but never weeps?", answer: "river", hint: "Found in nature" }
-        ];
+<div id="ui">УРОВЕНЬ: <span id="lvl">1</span></div>
 
-        let currentPuzzle = 0;
-        let score = 0;
-        let level = 1;
-        let answered = false;
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.155.0/three.min.js"></script>
 
-        function loadPuzzle() {
-            if (currentPuzzle >= puzzles.length) {
-                showGameOver();
-                return;
+<script>
+let scene, camera, renderer, player, headAnchor;
+let keys = {};
+let platforms = [];
+let currentLevel = 1;
+let velocity = new THREE.Vector3();
+let yaw = 0, pitch = 0;
+
+document.getElementById('startBtn').onclick = function() {
+    document.getElementById('menu').style.display = 'none';
+    document.getElementById('ui').style.display = 'block';
+    init();
+};
+
+function createModel(gender, color) {
+    const group = new THREE.Group();
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xffdbac });
+    const clothesMat = new THREE.MeshStandardMaterial({ color: color });
+    const hairMat = new THREE.MeshStandardMaterial({ color: gender === 'girl' ? 0x4b3020 : 0x222222 });
+
+    // Тело
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.9, 0.3), clothesMat);
+    body.position.y = 0.45;
+    group.add(body);
+
+    // Ноги
+    const legG = new THREE.BoxGeometry(0.25, 0.6, 0.25);
+    const legL = new THREE.Mesh(legG, new THREE.MeshStandardMaterial({ color: 0x333333 }));
+    legL.position.set(-0.15, -0.2, 0);
+    group.add(legL);
+    const legR = new THREE.Mesh(legG, new THREE.MeshStandardMaterial({ color: 0x333333 }));
+    legR.position.set(0.15, -0.2, 0);
+    group.add(legR);
+
+    // Голова (Якорь для камеры)
+    headAnchor = new THREE.Group();
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.45, 0.45), skinMat);
+    headAnchor.add(head);
+
+    // Волосы
+    if (gender === 'girl') {
+        const hairTop = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.15, 0.5), hairMat);
+        hairTop.position.y = 0.25;
+        headAnchor.add(hairTop);
+        const hairBack = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.2), hairMat);
+        hairBack.position.set(0, -0.1, -0.25);
+        headAnchor.add(hairBack);
+    } else {
+        const hairCap = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.25, 0.5), hairMat);
+        hairCap.position.y = 0.15;
+        headAnchor.add(hairCap);
+    }
+
+    headAnchor.position.y = 1.15;
+    group.add(headAnchor);
+    return group;
+}
+
+function init() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87ceeb);
+    scene.fog = new THREE.Fog(0x87ceeb, 20, 100);
+
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    document.body.appendChild(renderer.domElement);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+    sun.position.set(10, 20, 10);
+    sun.castShadow = true;
+    scene.add(sun);
+
+    const gender = document.getElementById('gender').value;
+    const color = parseInt(document.getElementById('skin').value, 16);
+    player = createModel(gender, color);
+    scene.add(player);
+    player.position.set(0, 5, 0);
+
+    buildLevel(currentLevel);
+
+    window.onkeydown = (e) => keys[e.code] = true;
+    window.onkeyup = (e) => keys[e.code] = false;
+
+    document.body.onclick = () => document.body.requestPointerLock();
+    document.onmousemove = (e) => {
+        if (document.pointerLockElement) {
+            yaw -= e.movementX * 0.003;
+            pitch -= e.movementY * 0.003;
+            pitch = Math.max(-1.4, Math.min(1.4, pitch)); // Ограничение вверх/вниз
+        }
+    };
+
+    animate();
+}
+
+function buildLevel(lvl) {
+    platforms.forEach(p => scene.remove(p));
+    platforms = [];
+    document.getElementById('lvl').innerText = lvl;
+
+    // Старт
+    const start = new THREE.Mesh(new THREE.BoxGeometry(8, 1, 8), new THREE.MeshStandardMaterial({ color: 0x27ae60 }));
+    start.position.set(0, -0.5, 0);
+    scene.add(start);
+    platforms.push(start);
+
+    for (let i = 1; i <= 10 + lvl; i++) {
+        const finish = (i === 10 + lvl);
+        const b = new THREE.Mesh(
+            new THREE.BoxGeometry(2.5, 0.5, 2.5),
+            new THREE.MeshStandardMaterial({ color: finish ? 0xf1c40f : 0xffffff })
+        );
+        b.position.set((Math.random()-0.5)*8, i*0.5, -i*4.5);
+        scene.add(b);
+        platforms.push(b);
+    }
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+
+    const speed = keys['ShiftLeft'] ? 0.2 : 0.12;
+    if (keys['KeyW']) player.translateZ(-speed);
+    if (keys['KeyS']) player.translateZ(speed);
+    if (keys['KeyA']) player.translateX(-speed);
+    if (keys['KeyD']) player.translateX(speed);
+
+    player.rotation.y = yaw;
+    headAnchor.rotation.x = pitch; // Вращаем голову модели
+
+    velocity.y -= 0.012;
+    player.position.y += velocity.y;
+
+    let ground = false;
+    platforms.forEach(p => {
+        let dx = Math.abs(player.position.x - p.position.x);
+        let dz = Math.abs(player.position.z - p.position.z);
+        if (dx < 1.5 && dz < 1.5 && player.position.y > p.position.y && player.position.y < p.position.y + 1.2) {
+            player.position.y = p.position.y + 0.9;
+            velocity.y = 0;
+            ground = true;
+            if (p.material.color.getHex() === 0xf1c40f) {
+                currentLevel++;
+                player.position.set(0, 5, 0);
+                buildLevel(currentLevel);
             }
-            
-            const puzzle = puzzles[currentPuzzle];
-            document.getElementById("puzzle").textContent = puzzle.question;
-            document.getElementById("answer").value = "";
-            document.getElementById("message").textContent = "";
-            document.getElementById("hint").textContent = "";
-            document.getElementById("current").textContent = currentPuzzle + 1;
-            document.getElementById("total").textContent = puzzles.length;
-            answered = false;
-            updateProgress();
         }
+    });
 
-        function checkAnswer() {
-            if (answered) return;
-            
-            const userAnswer = document.getElementById("answer").value.trim();
-            
-            if (!userAnswer) {
-                document.getElementById("hint").textContent = "⚠️ Please enter an answer";
-                return;
-            }
+    if (ground && keys['Space']) velocity.y = 0.26;
+    if (player.position.y < -15) { player.position.set(0, 5, 0); velocity.y = 0; }
 
-            const correctAnswer = puzzles[currentPuzzle].answer.toLowerCase();
-            const messageEl = document.getElementById("message");
-            answered = true;
+    // Камера от 3-го лица (всегда смотрит куда надо)
+    const relativeCameraOffset = new THREE.Vector3(0, 1.5, 5);
+    const cameraOffset = relativeCameraOffset.applyQuaternion(player.quaternion);
+    camera.position.copy(player.position).add(cameraOffset);
+    
+    // Плавный взгляд за мышкой
+    const lookTarget = player.position.clone().add(new THREE.Vector3(0, 1.5, 0));
+    camera.lookAt(lookTarget);
+    camera.rotation.x += pitch * 0.5; // Добавляем наклон камеры вверх-вниз
 
-            if (userAnswer.toLowerCase() === correctAnswer) {
-                messageEl.textContent = "✓ Correct! Great job!";
-                messageEl.className = "message correct";
-                score += 10;
-                document.getElementById("score").textContent = score;
-                setTimeout(() => nextPuzzle(), 1500);
-            } else {
-                messageEl.textContent = `✗ Wrong! The answer is: ${puzzles[currentPuzzle].answer}`;
-                messageEl.className = "message incorrect";
-                document.getElementById("hint").textContent = "Try again or skip to the next puzzle";
-            }
-        }
+    renderer.render(scene, camera);
+}
 
-        function nextPuzzle() {
-            currentPuzzle++;
-            if (currentPuzzle >= puzzles.length) {
-                setTimeout(() => showGameOver(), 500);
-            } else {
-                loadPuzzle();
-            }
-        }
-
-        function skipPuzzle() {
-            if (!answered) {
-                document.getElementById("message").textContent = "⏭️ Skipped this puzzle";
-                document.getElementById("message").className = "message skip";
-                answered = true;
-                setTimeout(() => nextPuzzle(), 1000);
-            }
-        }
-
-        function updateProgress() {
-            const progress = ((currentPuzzle) / puzzles.length) * 100;
-            document.getElementById("progress").style.width = progress + "%";
-        }
-
-        function showGameOver() {
-            const messageEl = document.getElementById("message");
-            const percentage = (score / (puzzles.length * 10)) * 100;
-            messageEl.innerHTML = `
-                <div class="game-over">
-                    <h2>Game Complete!</h2>
-                    <p>Final Score: <strong>${score}/${puzzles.length * 10}</strong></p>
-                    <p>Accuracy: <strong>${percentage.toFixed(0)}%</strong></p>
-                </div>
-            `;
-            messageEl.className = "message game-over-msg";
-            document.getElementById("progress").style.width = "100%";
-        }
-
-        function resetGame() {
-            currentPuzzle = 0;
-            score = 0;
-            level = 1;
-            document.getElementById("score").textContent = score;
-            document.getElementById("level").textContent = level;
-            loadPuzzle();
-        }
-
-        // Initialize game
-        document.getElementById("total").textContent = puzzles.length;
-        loadPuzzle();
-
-        // Allow Enter key to submit
-        document.getElementById("answer").addEventListener("keypress", function(event) {
-            if (event.key === "Enter") {
-                checkAnswer();
-            }
-        });
-    </script>
+window.onresize = () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+};
+</script>
 </body>
 </html>
