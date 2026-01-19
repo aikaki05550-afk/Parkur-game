@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>3D Parkour: Music & Keyboard Edition</title>
+    <title>3D Parkour: Spring & Sakura Edition</title>
     <style>
         body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #000; }
         #menu, #shopMenu, #bookUI, #tutorialUI {
@@ -14,9 +14,17 @@
             position: absolute; top: 20px; left: 20px; color: white;
             font-size: 24px; display: none; text-shadow: 2px 2px #000; font-weight: bold;
         }
-        #camStatus {
-            position: absolute; top: 60px; left: 20px; color: #ffeb3b; font-size: 18px; display: none;
+        #notification {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            text-align: center; pointer-events: none; display: none; z-index: 200;
         }
+        .glow-text {
+            font-size: 40px; color: #fff; text-shadow: 0 0 20px #f1c40f, 0 0 30px #f39c12;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse { 0% { opacity: 0.7; scale: 1; } 50% { opacity: 1; scale: 1.1; } 100% { opacity: 0.7; scale: 1; } }
+        
+        #camStatus { position: absolute; top: 60px; left: 20px; color: #ffeb3b; font-size: 18px; display: none; }
         .info { position: absolute; bottom: 20px; left: 20px; color: white; font-size: 14px; opacity: 0.8; pointer-events: none; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; }
         .box { background: rgba(0,0,0,0.8); padding: 30px; border-radius: 20px; text-align: center; border: 2px solid #f1c40f; min-width: 320px; }
         button {
@@ -35,31 +43,28 @@
 
         #tutorialUI { display: none; background: rgba(0,0,0,0.8); }
         .tut-page { background: #fdf6e3; color: #2c3e50; padding: 30px; border-radius: 10px; width: 350px; text-align: left; box-shadow: 0 0 20px rgba(0,0,0,0.5); border-left: 10px solid #d35400; }
-        .warning-text { color: red; font-weight: bold; font-size: 12px; margin-bottom: 10px; text-transform: uppercase; }
         .tut-page h2 { margin-top: 0; color: #d35400; border-bottom: 2px solid #eee; }
-        .tut-page b { color: #27ae60; }
     </style>
 </head>
 <body>
 
 <audio id="bgMusic" loop>
-    <source id="musicSource" src="" type="audio/mpeg">
+    <source id="musicSource" src="https://ia801004.us.archive.org/32/items/minecraft-mice-on-venus-c418/Mice%20On%20Venus.mp3" type="audio/mpeg">
 </audio>
+
+<div id="notification"><div class="glow-text" id="notifyText"></div></div>
 
 <div id="tutorialUI">
     <div class="tut-page">
-        <div class="warning-text">Attention: This guide is in English!</div>
         <h2>How to Play</h2>
         <p>1. <b>WASD</b> to move your character.</p>
         <p>2. <b>SPACE</b> to jump over blocks.</p>
         <p>3. <b>SHIFT</b> to run faster (Sprint).</p>
         <p>4. <b>MOUSE</b> or <b>ARROWS</b> to look around.</p>
-        <p>5. Press <b>B</b> to lock cursor for better control.</p>
+        <p>5. Press <b>B</b> to lock cursor.</p>
         <hr>
-        <p><i>Tip: You can customize Hair Style and Music in the Main Menu!</i></p>
         <button onclick="closeTutorial()" style="width: 100%; margin: 10px 0 0 0;">START GAME</button>
     </div>
-    <p style="margin-top: 10px; font-size: 14px;">(Training Manual)</p>
 </div>
 
 <div id="menu">
@@ -71,14 +76,13 @@
             <option value="girl">👧 Long Ponytail</option>
             <option value="boy">👦 Short Spiky</option>
         </select>
-        <label>Music (Minecraft Style):</label>
+        <label>Music:</label>
         <select id="musicSelect" onchange="changeMusic()">
+            <option value="https://ia801004.us.archive.org/32/items/minecraft-mice-on-venus-c418/Mice%20On%20Venus.mp3">🎹 Mice on Venus (C418)</option>
             <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3">🎹 Calm Piano</option>
-            <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3">🌙 Ambient Night</option>
-            <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3">🍃 Peaceful World</option>
             <option value="off">🔇 Music: OFF</option>
         </select>
-        <button id="startBtn">PLAY (START)</button>
+        <button id="startBtn">PLAY</button>
         <button class="buy-btn" onclick="toggleShop(true)">SHOP</button>
     </div>
 </div>
@@ -87,6 +91,10 @@
     <div class="box">
         <h2>MAGIC SHOP</h2>
         <p>Balance: <span class="coins">0</span> 💰</p>
+        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin: 10px;">
+            <p>🚀 Super Spring (+1 Jump)</p>
+            <button id="buySpringBtn" class="buy-btn" onclick="buySpring()">BUY FOR 300</button>
+        </div>
         <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin: 10px;">
             <p>📖 Magic Photo Book</p>
             <button id="buyBookBtn" class="buy-btn" onclick="buyBook()">BUY FOR 500</button>
@@ -105,14 +113,13 @@
     </div>
 </div>
 
-<div id="ui">LEVEL: <span id="lvl">1</span> | COINS: <span class="coins">0</span></div>
+<div id="ui">LEVEL: <span id="lvl">1</span> | COINS: <span class="coins">0</span> <span id="springIcon"></span></div>
 <div id="camStatus">Camera: 3rd Person</div>
 <button id="openBookBtn" onclick="toggleBook(true)">📖 OPEN BOOK</button>
 <button id="openTutorialBtn" onclick="showTutorial()">📖 TUTORIAL</button>
 
 <div class="info">
-    <b>M</b>: Menu | <b>B</b>: Lock Cursor | <b>WASD</b>: Move | <b>SPACE</b>: Jump | <b>C</b>: Camera<br>
-    <b>ARROWS</b>: Look Around (Keyboard Mode)
+    <b>M</b>: Menu | <b>B</b>: Lock | <b>WASD</b>: Move | <b>SPACE</b>: Jump | <b>C</b>: Camera
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.155.0/three.min.js"></script>
@@ -121,16 +128,23 @@
 let scene, camera, renderer, player, headAnchor, sun, sunSphere;
 let keys = {};
 let platforms = [];
-let currentLevel = 1, coins = 0, hasBook = false, currentPage = 0;
+let currentLevel = 1, coins = 0, hasBook = false, hasSpring = false, springUsedCount = 0;
 let velocity = new THREE.Vector3(), yaw = 0, pitch = 0;
 let camMode = 0; 
-let snowParticles;
+let snowParticles, petals = [];
 
 const audio = document.getElementById('bgMusic');
 const musicSelect = document.getElementById('musicSelect');
 
 function showTutorial() { document.getElementById('tutorialUI').style.display = 'flex'; document.exitPointerLock(); }
 function closeTutorial() { document.getElementById('tutorialUI').style.display = 'none'; }
+
+function showNotify(text, duration = 4000) {
+    const el = document.getElementById('notification');
+    document.getElementById('notifyText').innerText = text;
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', duration);
+}
 
 function changeMusic() {
     const val = musicSelect.value;
@@ -141,11 +155,15 @@ function changeMusic() {
 function updateCoins() {
     document.querySelectorAll('.coins').forEach(el => el.innerText = coins);
     document.getElementById('coinCount').innerText = coins;
+    document.getElementById('springIcon').innerText = (hasSpring) ? " | 🚀 SPRING ACTIVE" : "";
 }
 
-function toggleShop(show) {
-    document.getElementById('shopMenu').style.display = show ? 'flex' : 'none';
-    document.getElementById('menu').style.display = show ? 'none' : 'flex';
+function buySpring() {
+    if (coins >= 300) {
+        coins -= 300; hasSpring = true; updateCoins();
+        document.getElementById('buySpringBtn').innerText = "OWNED";
+        document.getElementById('buySpringBtn').disabled = true;
+    } else { alert("Not enough coins!"); }
 }
 
 function buyBook() {
@@ -155,6 +173,11 @@ function buyBook() {
         document.getElementById('buyBookBtn').disabled = true;
         document.getElementById('openBookBtn').style.display = 'block';
     } else { alert("Not enough coins!"); }
+}
+
+function toggleShop(show) {
+    document.getElementById('shopMenu').style.display = show ? 'flex' : 'none';
+    document.getElementById('menu').style.display = show ? 'none' : 'flex';
 }
 
 function toggleBook(show) {
@@ -178,26 +201,6 @@ document.getElementById('startBtn').onclick = () => {
     showTutorial();
 };
 
-function createModel() {
-    const group = new THREE.Group();
-    const gender = document.getElementById('gender').value;
-    const clothesMat = new THREE.MeshStandardMaterial({ color: 0x3498db, metalness: 0.2, roughness: 0.5 });
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.8, 0.3), clothesMat);
-    body.position.y = 0.45; body.castShadow = true; group.add(body);
-    headAnchor = new THREE.Group();
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), new THREE.MeshStandardMaterial({color: 0xffdbac}));
-    head.castShadow = true; headAnchor.add(head);
-    const hairMat = new THREE.MeshStandardMaterial({ color: 0x4b3020 });
-    const hair = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.15, 0.45), hairMat);
-    hair.position.y = 0.18; headAnchor.add(hair);
-    if(gender === 'girl') {
-        const pony = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.5, 0.15), hairMat);
-        pony.position.set(0, -0.1, -0.25); headAnchor.add(pony);
-    }
-    headAnchor.position.y = 1.0; group.add(headAnchor);
-    return group;
-}
-
 function init() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87ceeb);
@@ -207,7 +210,8 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.shadowMap.enabled = true;
     document.body.appendChild(renderer.domElement);
-    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    
     sunSphere = new THREE.Mesh(new THREE.SphereGeometry(4, 32, 32), new THREE.MeshBasicMaterial({ color: 0xfff3d0 }));
     sunSphere.position.set(40, 60, -50);
     scene.add(sunSphere);
@@ -216,7 +220,7 @@ function init() {
     sun.castShadow = true;
     scene.add(sun);
 
-    // Снег
+    // Particles for Snow
     const snowGeo = new THREE.BufferGeometry();
     const snowCount = 1000;
     const snowPos = new Float32Array(snowCount * 3);
@@ -250,52 +254,99 @@ function init() {
     animate();
 }
 
+function createModel() {
+    const group = new THREE.Group();
+    const gender = document.getElementById('gender').value;
+    const clothesMat = new THREE.MeshStandardMaterial({ color: 0x3498db });
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.8, 0.3), clothesMat);
+    body.position.y = 0.45; group.add(body);
+    headAnchor = new THREE.Group();
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), new THREE.MeshStandardMaterial({color: 0xffdbac}));
+    headAnchor.add(head);
+    const hairMat = new THREE.MeshStandardMaterial({ color: 0x4b3020 });
+    const hair = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.15, 0.45), hairMat);
+    hair.position.y = 0.18; headAnchor.add(hair);
+    if(gender === 'girl') {
+        const pony = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.5, 0.15), hairMat);
+        pony.position.set(0, -0.1, -0.25); headAnchor.add(pony);
+    }
+    headAnchor.position.y = 1.0; group.add(headAnchor);
+    return group;
+}
+
 function buildLevel() {
     platforms.forEach(p => scene.remove(p));
-    platforms = [];
+    petals.forEach(p => scene.remove(p));
+    platforms = []; petals = [];
     document.getElementById('lvl').innerText = currentLevel;
+    
+    // Logic for notifications
+    if (currentLevel === 2) {
+        hasSpring = true;
+        springUsedCount = 0;
+        showNotify("FREE SPRING FOR 2 LEVELS!");
+        updateCoins();
+    }
+    if (currentLevel === 4 && hasSpring && springUsedCount >= 2) {
+        hasSpring = false;
+        showNotify("SPRING EXPIRED! BUY IN SHOP");
+        updateCoins();
+    }
+    if (currentLevel === 5) showNotify("LEVEL 10: SAKURA WORLD PORTAL!");
 
-    // Биомы
+    // Biomes
     let bgColor = 0x87ceeb;
-    let platColor = 0xffffff;
     let groundColor = 0x27ae60;
     snowParticles.visible = false;
 
-    if (currentLevel >= 6 && currentLevel <= 10) { // Снежный
-        bgColor = 0xbdc3c7;
-        platColor = 0xecf0f1;
-        groundColor = 0xffffff;
-        snowParticles.visible = true;
-    } else if (currentLevel > 10) { // Радужный
-        bgColor = 0xffd1dc;
-        groundColor = 0xa29bfe;
+    if (currentLevel >= 6 && currentLevel <= 9) {
+        bgColor = 0xbdc3c7; groundColor = 0xffffff; snowParticles.visible = true;
+    } else if (currentLevel >= 10) {
+        bgColor = 0xffd1dc; groundColor = 0xff7eb9; // Sakura theme
+        createSakuraTree();
     }
 
     scene.background.set(bgColor);
     scene.fog.color.set(bgColor);
 
-    // Облегчение сложности до 5 уровня
     let gap = currentLevel <= 5 ? 5 : 7;
     let size = currentLevel <= 5 ? 4 : 3;
 
-    addPlatform(0, -0.5, 0, 10, 1, 10, groundColor, currentLevel <= 5); 
+    addPlatform(0, -0.5, 0, 10, 1, 10, groundColor, true); 
     for(let i=1; i<=12; i++) {
         const finish = i === 12;
-        let c = finish ? 0xf1c40f : (currentLevel > 10 ? Math.random() * 0xffffff : platColor);
-        addPlatform((Math.random()-0.5)*15, i*1.2, -i*gap, size, 0.5, size, c, !finish && currentLevel <= 5);
+        let c = finish ? 0xf1c40f : (currentLevel >= 10 ? 0xffb7c5 : 0xffffff);
+        addPlatform((Math.random()-0.5)*15, i*1.2, -i*gap, size, 0.5, size, c, true);
+    }
+}
+
+function createSakuraTree() {
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.8, 10), new THREE.MeshStandardMaterial({color: 0x4b3020}));
+    trunk.position.set(0, 5, -50);
+    scene.add(trunk);
+    const leaves = new THREE.Mesh(new THREE.SphereGeometry(6, 16, 16), new THREE.MeshStandardMaterial({color: 0xffb7c5, transparent: true, opacity: 0.9}));
+    leaves.position.set(0, 11, -50);
+    scene.add(leaves);
+
+    // Falling petals
+    for(let i=0; i<50; i++) {
+        const petal = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.2), new THREE.MeshBasicMaterial({color: 0xffb7c5, side: THREE.DoubleSide}));
+        petal.position.set((Math.random()-0.5)*20, 10 + Math.random()*10, -50 + (Math.random()-0.5)*20);
+        scene.add(petal);
+        petals.push(petal);
     }
 }
 
 function addPlatform(x,y,z,w,h,d,color, hasGrass) {
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), new THREE.MeshStandardMaterial({ color, roughness: 0.6 }));
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), new THREE.MeshStandardMaterial({ color }));
     mesh.position.set(x,y,z);
-    mesh.receiveShadow = true; mesh.castShadow = true;
-    scene.add(mesh);
+    mesh.receiveShadow = true; scene.add(mesh);
     platforms.push(mesh);
     if(hasGrass) {
-        const gMat = new THREE.MeshStandardMaterial({ color: 0x2ecc71 });
-        for(let g=0; g<15; g++) {
-            const grass = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.4, 0.1), gMat);
+        const count = currentLevel >= 10 ? 100 : 20; // Dense grass for Genshin style
+        const gColor = currentLevel >= 10 ? 0x7cfc00 : 0x2ecc71;
+        for(let g=0; g<count; g++) {
+            const grass = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.5, 0.05), new THREE.MeshStandardMaterial({ color: gColor }));
             grass.position.set((Math.random()-0.5)*w, h/2+0.2, (Math.random()-0.5)*d);
             mesh.add(grass);
         }
@@ -324,16 +375,12 @@ function animate() {
     velocity.y -= 0.018;
     player.position.y += velocity.y;
 
-    // Анимация снега
-    if(snowParticles.visible) {
-        snowParticles.position.set(player.position.x, player.position.y + 10, player.position.z);
-        const positions = snowParticles.geometry.attributes.position.array;
-        for(let i=1; i<positions.length; i+=3) {
-            positions[i] -= 0.1;
-            if(positions[i] < -20) positions[i] = 20;
-        }
-        snowParticles.geometry.attributes.position.needsUpdate = true;
-    }
+    // Petals animation
+    petals.forEach(p => {
+        p.position.y -= 0.05;
+        p.rotation.x += 0.02;
+        if(p.position.y < 0) p.position.y = 15;
+    });
 
     let onGround = false;
     platforms.forEach(p => {
@@ -345,14 +392,18 @@ function animate() {
                 velocity.y = 0;
                 onGround = true;
                 if(p.material.color.getHex() === 0xf1c40f) {
-                    coins += 100; currentLevel++; updateCoins();
+                    coins += 100; currentLevel++; 
+                    if (currentLevel === 3 || currentLevel === 4) springUsedCount++;
+                    updateCoins();
                     player.position.set(0,5,0); buildLevel();
                 }
             }
         }
     });
 
-    if(onGround && keys['Space']) velocity.y = 0.38;
+    if(onGround && keys['Space']) {
+        velocity.y = hasSpring ? 0.48 : 0.38; // 0.48 makes jump ~1 block higher
+    }
     if(player.position.y < -20) { player.position.set(0,5,0); velocity.y = 0; }
 
     if (camMode === 1) {
@@ -370,4 +421,4 @@ function animate() {
 }
 </script>
 </body>
-</html>
+</html> 
