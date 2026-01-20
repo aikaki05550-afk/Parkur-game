@@ -2,324 +2,552 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Chicken Puzzle</title>
+    <title>3D Parkour: Spring & Sakura Edition</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
-        #canvas { display: block; }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: #000; }
+        #menu, #shopMenu, #bookUI, #tutorialUI {
+            position: absolute; inset: 0; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            background: radial-gradient(circle, #2c3e50, #000); color: white; z-index: 100;
+        }
         #ui {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: white;
-            background: rgba(0,0,0,0.7);
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 18px;
+            position: absolute; top: 20px; left: 20px; color: white;
+            font-size: 24px; display: none; text-shadow: 2px 2px #000; font-weight: bold;
         }
-        #levelInfo { margin-bottom: 10px; }
-        #controls {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            color: white;
-            background: rgba(0,0,0,0.7);
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 14px;
+        #notification {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            text-align: center; pointer-events: none; display: none; z-index: 200;
         }
-        #nextLevel {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.9);
-            color: #0f0;
-            padding: 40px;
-            border-radius: 10px;
-            text-align: center;
-            font-size: 24px;
-            display: none;
-            z-index: 100;
+        .glow-text {
+            font-size: 40px; color: #fff; text-shadow: 0 0 20px #f1c40f, 0 0 30px #f39c12;
+            animation: pulse 1.5s infinite;
         }
+        @keyframes pulse { 0% { opacity: 0.7; scale: 1; } 50% { opacity: 1; scale: 1.1; } 100% { opacity: 0.7; scale: 1; } }
+        
+        #camStatus { position: absolute; top: 60px; left: 20px; color: #ffeb3b; font-size: 18px; display: none; }
+        .info { position: absolute; bottom: 20px; left: 20px; color: white; font-size: 14px; opacity: 0.8; pointer-events: none; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; }
+        .box { background: rgba(0,0,0,0.8); padding: 30px; border-radius: 20px; text-align: center; border: 2px solid #f1c40f; min-width: 320px; }
+        button {
+            padding: 10px 30px; font-size: 18px; cursor: pointer; margin: 10px;
+            background: #27ae60; border: none; color: white; border-radius: 10px;
+            transition: 0.3s; box-shadow: 0 4px 0 #1e8449;
+        }
+        button:hover { background: #2ecc71; transform: translateY(-2px); }
+        .buy-btn { background: #f39c12; box-shadow: 0 4px 0 #d35400; }
+        select { padding: 10px; margin: 5px; width: 100%; border-radius: 5px; background: #333; color: white; border: 1px solid #555; }
+        #bookUI { display: none; background: rgba(0,0,0,0.95); }
+        #bookImg { width: 500px; height: 350px; object-fit: cover; border: 8px solid #fff; }
+        
+        #openBookBtn { position: absolute; top: 20px; right: 20px; display: none; background: #9b59b6; }
+        #openTutorialBtn { position: absolute; top: 80px; right: 20px; display: none; background: #3498db; font-size: 14px; padding: 10px; box-shadow: 0 4px 0 #2980b9; }
+
+        #tutorialUI { display: none; background: rgba(0,0,0,0.8); }
+        .tut-page { background: #fdf6e3; color: #2c3e50; padding: 30px; border-radius: 10px; width: 350px; text-align: left; box-shadow: 0 0 20px rgba(0,0,0,0.5); border-left: 10px solid #d35400; }
+        .tut-page h2 { margin-top: 0; color: #d35400; border-bottom: 2px solid #eee; }
     </style>
 </head>
 <body>
-    <div id="ui">
-        <div id="levelInfo">Level: <span id="level">1</span>/30</div>
-        <div>Biom: <span id="biom">Winter</span></div>
+
+<audio id="bgMusic" loop>
+    <source id="musicSource" src="https://ia801004.us.archive.org/32/items/minecraft-mice-on-venus-c418/Mice%20On%20Venus.mp3" type="audio/mpeg">
+</audio>
+
+<div id="notification"><div class="glow-text" id="notifyText"></div></div>
+
+<div id="tutorialUI">
+    <div class="tut-page">
+        <h2>How to Play</h2>
+        <p>1. <b>WASD</b> to move your character.</p>
+        <p>2. <b>SPACE</b> to jump over blocks.</p>
+        <p>3. <b>SHIFT</b> to run faster (Sprint).</p>
+        <p>4. <b>MOUSE</b> or <b>ARROWS</b> to look around.</p>
+        <p>5. Press <b>B</b> to lock cursor.</p>
+        <hr>
+        <button onclick="closeTutorial()" style="width: 100%; margin: 10px 0 0 0;">START GAME</button>
     </div>
-    <div id="controls">
-        <div>WASD - Move</div>
-        <div>SPACE - Jump</div>
-        <div>Mouse - Look Around</div>
+</div>
+
+<div id="menu">
+    <div class="box">
+        <h1>PARKOUR ULTRA</h1>
+        <p>Coins: <span id="coinCount">0</span> 💰</p>
+        <label>Hair Style:</label>
+        <select id="gender">
+            <option value="girl">👧 Long Ponytail</option>
+            <option value="boy">👦 Short Spiky</option>
+        </select>
+        <label>Music:</label>
+        <select id="musicSelect" onchange="changeMusic()">
+            <option value="https://ia801004.us.archive.org/32/items/minecraft-mice-on-venus-c418/Mice%20On%20Venus.mp3">🎹 Mice on Venus (C418)</option>
+            <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3">🎹 Calm Piano</option>
+            <option value="off">🔇 Music: OFF</option>
+        </select>
+        <button id="startBtn">PLAY</button>
+        <button class="buy-btn" onclick="toggleShop(true)">SHOP</button>
     </div>
-    <div id="nextLevel">Level Complete!<br><br>Press SPACE to continue</div>
+</div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script>
-        // Game variables
-        let scene, camera, renderer;
-        let chicken, currentLevel = 1;
-        let bioms = ['Winter', 'Autumn', 'Summer'];
-        let currentBiom = 0;
-        let levelComplete = false;
-        let canJump = true;
+<div id="shopMenu" style="display:none">
+    <div class="box">
+        <h2>MAGIC SHOP</h2>
+        <p>Balance: <span class="coins">0</span> 💰</p>
+        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin: 10px;">
+            <p>🚀 Super Spring (+1 Jump)</p>
+            <button id="buySpringBtn" class="buy-btn" onclick="buySpring()">BUY FOR 300</button>
+        </div>
+        <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin: 10px;">
+            <p>📖 Magic Photo Book</p>
+            <button id="buyBookBtn" class="buy-btn" onclick="buyBook()">BUY FOR 500</button>
+        </div>
+        <button onclick="toggleShop(false)">BACK</button>
+    </div>
+</div>
 
-        // Keyboard input
-        const keys = {};
-        window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-        window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+<div id="bookUI">
+    <h2 id="pageTitle">Page 1 / 10</h2>
+    <img id="bookImg" src="" alt="Photo">
+    <div>
+        <button onclick="changePage(-1)">PREVIOUS</button>
+        <button onclick="changePage(1)">NEXT</button>
+        <button style="background:#e74c3c" onclick="toggleBook(false)">CLOSE</button>
+    </div>
+</div>
 
-        // Initialize game
-        function init() {
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.shadowMap.enabled = true;
-            document.body.appendChild(renderer.domElement);
+<div id="ui">LEVEL: <span id="lvl">1</span> | COINS: <span class="coins">0</span> <span id="springIcon"></span></div>
+<div id="camStatus">Camera: 3rd Person</div>
+<button id="openBookBtn" onclick="toggleBook(true)">📖 OPEN BOOK</button>
+<button id="openTutorialBtn" onclick="showTutorial()">📖 TUTORIAL</button>
 
-            // Lighting
-            const ambLight = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambLight);
-            
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            dirLight.position.set(50, 50, 50);
-            dirLight.castShadow = true;
-            dirLight.shadow.mapSize.width = 2048;
-            dirLight.shadow.mapSize.height = 2048;
-            scene.add(dirLight);
+<div class="info">
+    <b>M</b>: Menu | <b>B</b>: Lock | <b>WASD</b>: Move | <b>SPACE</b>: Jump | <b>C</b>: Camera
+</div>
 
-            // Create chicken player
-            createChicken();
-            
-            // Load level
-            loadLevel(currentLevel);
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.155.0/three.min.js"></script>
 
-            // Mouse lock
-            document.addEventListener('click', () => renderer.domElement.requestPointerLock());
-            document.addEventListener('mousemove', onMouseMove);
+<script>
+let scene, camera, renderer, player, headAnchor, sun, sunSphere;
+let keys = {};
+let platforms = [];
+let currentLevel = 1, coins = 0, hasBook = false, hasSpring = false, springUsedCount = 0;
+let velocity = new THREE.Vector3(), yaw = 0, pitch = 0;
+let camMode = 0; 
+let snowParticles, petals = [];
 
-            animate();
-            window.addEventListener('resize', onWindowResize);
+const audio = document.getElementById('bgMusic');
+const musicSelect = document.getElementById('musicSelect');
+
+function showTutorial() { document.getElementById('tutorialUI').style.display = 'flex'; document.exitPointerLock(); }
+function closeTutorial() { document.getElementById('tutorialUI').style.display = 'none'; }
+
+function showNotify(text, duration = 4000) {
+    const el = document.getElementById('notification');
+    document.getElementById('notifyText').innerText = text;
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', duration);
+}
+
+function changeMusic() {
+    const val = musicSelect.value;
+    if (val === 'off') { audio.pause(); } 
+    else { document.getElementById('musicSource').src = val; audio.load(); audio.play().catch(() => {}); }
+}
+
+function updateCoins() {
+    document.querySelectorAll('.coins').forEach(el => el.innerText = coins);
+    document.getElementById('coinCount').innerText = coins;
+    document.getElementById('springIcon').innerText = (hasSpring) ? " | 🚀 SPRING ACTIVE" : "";
+}
+
+function buySpring() {
+    if (coins >= 300) {
+        coins -= 300; hasSpring = true; updateCoins();
+        document.getElementById('buySpringBtn').innerText = "OWNED";
+        document.getElementById('buySpringBtn').disabled = true;
+    } else { alert("Not enough coins!"); }
+}
+
+function buyBook() {
+    if (coins >= 500) {
+        coins -= 500; hasBook = true; updateCoins();
+        document.getElementById('buyBookBtn').innerText = "OWNED";
+        document.getElementById('buyBookBtn').disabled = true;
+        document.getElementById('openBookBtn').style.display = 'block';
+    } else { alert("Not enough coins!"); }
+}
+
+function toggleShop(show) {
+    document.getElementById('shopMenu').style.display = show ? 'flex' : 'none';
+    document.getElementById('menu').style.display = show ? 'none' : 'flex';
+}
+
+function toggleBook(show) {
+    document.getElementById('bookUI').style.display = show ? 'flex' : 'none';
+    if(show) { currentPage = 0; updateBookPage(); document.exitPointerLock(); }
+}
+
+function changePage(dir) { currentPage = (currentPage + dir + 10) % 10; updateBookPage(); }
+function updateBookPage() {
+    document.getElementById('bookImg').src = `https://picsum.photos/id/${[10,13,16,24,28,29,34,42,48,54][currentPage]}/1000/700`;
+    document.getElementById('pageTitle').innerText = `Photo ${currentPage + 1} / 10`;
+}
+
+document.getElementById('startBtn').onclick = () => {
+    document.getElementById('menu').style.display = 'none';
+    document.getElementById('ui').style.display = 'block';
+    document.getElementById('camStatus').style.display = 'block';
+    document.getElementById('openTutorialBtn').style.display = 'block';
+    changeMusic(); 
+    if(!scene) init();
+    showTutorial();
+};
+
+function init() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x87ceeb);
+    scene.fog = new THREE.Fog(0x87ceeb, 10, 100);
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    document.body.appendChild(renderer.domElement);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    
+    sunSphere = new THREE.Mesh(new THREE.SphereGeometry(4, 32, 32), new THREE.MeshBasicMaterial({ color: 0xfff3d0 }));
+    sunSphere.position.set(40, 60, -50);
+    scene.add(sunSphere);
+    sun = new THREE.DirectionalLight(0xffffff, 1.3);
+    sun.position.copy(sunSphere.position);
+    sun.castShadow = true;
+    scene.add(sun);
+
+    // Particles for Snow
+    const snowGeo = new THREE.BufferGeometry();
+    const snowCount = 1000;
+    const snowPos = new Float32Array(snowCount * 3);
+    for(let i=0; i<snowCount*3; i++) snowPos[i] = (Math.random()-0.5)*50;
+    snowGeo.setAttribute('position', new THREE.BufferAttribute(snowPos, 3));
+    snowParticles = new THREE.Points(snowGeo, new THREE.PointsMaterial({color: 0xffffff, size: 0.1}));
+    scene.add(snowParticles);
+
+    player = createModel();
+    scene.add(player);
+    player.position.set(0, 5, 0);
+
+    buildLevel();
+
+    window.onkeydown = (e) => {
+        keys[e.code] = true;
+        if(e.code === 'KeyM') { document.getElementById('menu').style.display = 'flex'; document.exitPointerLock(); }
+        if(e.code === 'KeyB') document.body.requestPointerLock();
+        if(e.code === 'KeyC') {
+            camMode = (camMode + 1) % 3;
+            document.getElementById('camStatus').innerText = "Camera: " + ["3rd Person", "1st Person", "Front View"][camMode];
         }
-
-        function createChicken() {
-            const group = new THREE.Group();
-            
-            // Body
-            const bodyGeom = new THREE.SphereGeometry(0.5, 16, 16);
-            const bodyMat = new THREE.MeshStandardMaterial({ color: 0xffcc00 });
-            const body = new THREE.Mesh(bodyGeom, bodyMat);
-            body.castShadow = true;
-            body.receiveShadow = true;
-            group.add(body);
-
-            // Head
-            const headGeom = new THREE.SphereGeometry(0.25, 16, 16);
-            const head = new THREE.Mesh(headGeom, bodyMat);
-            head.position.y = 0.6;
-            head.castShadow = true;
-            group.add(head);
-
-            // Eyes
-            const eyeGeom = new THREE.SphereGeometry(0.1, 8, 8);
-            const eyeMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
-            const eye1 = new THREE.Mesh(eyeGeom, eyeMat);
-            eye1.position.set(-0.1, 0.8, 0.2);
-            group.add(eye1);
-
-            group.position.y = 2;
-            group.velocity = new THREE.Vector3();
-            group.canWalk = true;
-            
-            scene.add(group);
-            chicken = group;
+    };
+    window.onkeyup = (e) => keys[e.code] = false;
+    document.onmousemove = (e) => {
+        if (document.pointerLockElement) {
+            yaw -= e.movementX * 0.003;
+            pitch = Math.max(-1.5, Math.min(1.5, pitch - e.movementY * 0.003));
         }
+    };
+    animate();
+}
 
-        function loadLevel(levelNum) {
-            // Clear old level
-            scene.children = scene.children.filter(obj => obj !== chicken && obj.type === 'Light');
-            
-            currentBiom = (levelNum - 1) % 3;
-            document.getElementById('level').textContent = levelNum;
-            document.getElementById('biom').textContent = bioms[currentBiom];
-            
-            // Set sky color based on biom
-            const colors = [0x87ceeb, 0xff8c42, 0xffffcc];
-            scene.background = new THREE.Color(colors[currentBiom]);
-            
-            levelComplete = false;
-            canJump = true;
+function createModel() {
+    const group = new THREE.Group();
+    const gender = document.getElementById('gender').value;
+    const clothesMat = new THREE.MeshStandardMaterial({ color: 0x3498db });
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.8, 0.3), clothesMat);
+    body.position.y = 0.45; group.add(body);
+    headAnchor = new THREE.Group();
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), new THREE.MeshStandardMaterial({color: 0xffdbac}));
+    headAnchor.add(head);
+    const hairMat = new THREE.MeshStandardMaterial({ color: 0x4b3020 });
+    const hair = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.15, 0.45), hairMat);
+    hair.position.y = 0.18; headAnchor.add(hair);
+    if(gender === 'girl') {
+        const pony = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.5, 0.15), hairMat);
+        pony.position.set(0, -0.1, -0.25); headAnchor.add(pony);
+    }
+    headAnchor.position.y = 1.0; group.add(headAnchor);
+    return group;
+}
 
-            // Difficulty increases with level
-            const difficulty = Math.min(levelNum, 10);
-            
-            // Create level platforms
-            createLevelPlatforms(difficulty, currentBiom);
-            
-            // Create portal
-            createPortal();
-            
-            // Reset chicken
-            chicken.position.set(0, 2, 0);
-            chicken.velocity.set(0, 0, 0);
+function buildLevel() {
+    platforms.forEach(p => scene.remove(p));
+    petals.forEach(p => scene.remove(p));
+    platforms = []; petals = [];
+    document.getElementById('lvl').innerText = currentLevel;
+    
+    // Logic for notifications
+    if (currentLevel === 2) {
+        hasSpring = true;
+        springUsedCount = 0;
+        showNotify("FREE SPRING FOR 2 LEVELS!");
+        updateCoins();
+    }
+    if (currentLevel === 4 && hasSpring && springUsedCount >= 2) {
+        hasSpring = false;
+        showNotify("SPRING EXPIRED! BUY IN SHOP");
+        updateCoins();
+    }
+    if (currentLevel === 5) showNotify("LEVEL 10: SAKURA WORLD PORTAL!");
+
+    // Biomes
+    let bgColor = 0x87ceeb;
+    let groundColor = 0x27ae60;
+    snowParticles.visible = false;
+
+    if (currentLevel >= 6 && currentLevel <= 9) {
+        bgColor = 0xbdc3c7; groundColor = 0xffffff; snowParticles.visible = true;
+    } else if (currentLevel >= 10) {
+        bgColor = 0xffd1dc; groundColor = 0xff7eb9; // Sakura theme
+        createSakuraTree();
+    }
+
+    scene.background.set(bgColor);
+    scene.fog.color.set(bgColor);
+
+    let gap = currentLevel <= 5 ? 5 : 7;
+    let size = currentLevel <= 5 ? 4 : 3;
+
+    addPlatform(0, -0.5, 0, 10, 1, 10, groundColor, true); 
+    for(let i=1; i<=12; i++) {
+        const finish = i === 12;
+        let c = finish ? 0xf1c40f : (currentLevel >= 10 ? 0xffb7c5 : 0xffffff);
+        addPlatform((Math.random()-0.5)*15, i*1.2, -i*gap, size, 0.5, size, c, true);
+    }
+}
+
+function createSakuraTree() {
+    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.8, 10), new THREE.MeshStandardMaterial({color: 0x4b3020}));
+    trunk.position.set(0, 5, -50);
+    scene.add(trunk);
+    const leaves = new THREE.Mesh(new THREE.SphereGeometry(6, 16, 16), new THREE.MeshStandardMaterial({color: 0xffb7c5, transparent: true, opacity: 0.9}));
+    leaves.position.set(0, 11, -50);
+    scene.add(leaves);
+
+    // Falling petals
+    for(let i=0; i<50; i++) {
+        const petal = new THREE.Mesh(new THREE.PlaneGeometry(0.2, 0.2), new THREE.MeshBasicMaterial({color: 0xffb7c5, side: THREE.DoubleSide}));
+        petal.position.set((Math.random()-0.5)*20, 10 + Math.random()*10, -50 + (Math.random()-0.5)*20);
+        scene.add(petal);
+        petals.push(petal);
+    }
+}
+
+function addPlatform(x,y,z,w,h,d,color, hasGrass) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), new THREE.MeshStandardMaterial({ color }));
+    mesh.position.set(x,y,z);
+    mesh.receiveShadow = true; scene.add(mesh);
+    platforms.push(mesh);
+    if(hasGrass) {
+        const count = currentLevel >= 10 ? 100 : 20; // Dense grass for Genshin style
+        const gColor = currentLevel >= 10 ? 0x7cfc00 : 0x2ecc71;
+        for(let g=0; g<count; g++) {
+            const grass = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.5, 0.05), new THREE.MeshStandardMaterial({ color: gColor }));
+            grass.position.set((Math.random()-0.5)*w, h/2+0.2, (Math.random()-0.5)*d);
+            mesh.add(grass);
         }
+    }
+}
 
-        function createLevelPlatforms(difficulty, biom) {
-            const platformCount = 5 + difficulty;
-            
-            for (let i = 0; i < platformCount; i++) {
-                const x = (Math.random() - 0.5) * 40;
-                const y = 2 + i * 3 + Math.random() * 5;
-                const z = (Math.random() - 0.5) * 40;
-                const size = 3 - difficulty * 0.1;
-                
-                createPlatform(x, y, z, size, biom);
-                
-                // Add walls for walking on
-                if (i % 3 === 0) {
-                    createWall(x + 10, y, z, biom);
-                    createWall(x - 10, y, z, biom);
+function animate() {
+    requestAnimationFrame(animate);
+    if(keys['ArrowLeft']) yaw += 0.04;
+    if(keys['ArrowRight']) yaw -= 0.04;
+    if(keys['ArrowUp']) pitch = Math.min(1.5, pitch + 0.04);
+    if(keys['ArrowDown']) pitch = Math.max(-1.5, pitch - 0.04);
+
+    const speed = keys['ShiftLeft'] ? 0.25 : 0.15;
+    const moveDir = new THREE.Vector3();
+    if(keys['KeyW']) moveDir.z -= 1;
+    if(keys['KeyS']) moveDir.z += 1;
+    if(keys['KeyA']) moveDir.x -= 1;
+    if(keys['KeyD']) moveDir.x += 1;
+    moveDir.normalize().multiplyScalar(speed).applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
+    
+    player.position.add(moveDir);
+    player.rotation.y = yaw;
+    headAnchor.rotation.x = pitch;
+
+    velocity.y -= 0.018;
+    player.position.y += velocity.y;
+
+    // Petals animation
+    petals.forEach(p => {
+        p.position.y -= 0.05;
+        p.rotation.x += 0.02;
+        if(p.position.y < 0) p.position.y = 15;
+    });
+
+    let onGround = false;
+    platforms.forEach(p => {
+        let dx = Math.abs(player.position.x - p.position.x);
+        let dz = Math.abs(player.position.z - p.position.z);
+        if(dx < p.geometry.parameters.width/2 + 0.3 && dz < p.geometry.parameters.depth/2 + 0.3) {
+            if(player.position.y > p.position.y && player.position.y < p.position.y + 1.2 && velocity.y <= 0) {
+                player.position.y = p.position.y + 1;
+                velocity.y = 0;
+                onGround = true;
+                if(p.material.color.getHex() === 0xf1c40f) {
+                    coins += 100; currentLevel++; 
+                    if (currentLevel === 3 || currentLevel === 4) springUsedCount++;
+                    updateCoins();
+                    player.position.set(0,5,0); buildLevel();
                 }
             }
-            
-            // Ground
-            createPlatform(0, -1, 0, 100, biom);
         }
+    });
 
-        function createPlatform(x, y, z, size, biom) {
-            const colors = [0xffffff, 0x8b4513, 0x90ee90];
-            const geom = new THREE.BoxGeometry(size, 0.5, size);
-            const mat = new THREE.MeshStandardMaterial({ color: colors[biom] });
-            const platform = new THREE.Mesh(geom, mat);
-            platform.position.set(x, y, z);
-            platform.castShadow = true;
-            platform.receiveShadow = true;
-            platform.userData.isWalkable = true;
-            scene.add(platform);
-        }
+    if(onGround && keys['Space']) {
+        velocity.y = hasSpring ? 0.48 : 0.38; // 0.48 makes jump ~1 block higher
+    }
+    if(player.position.y < -20) { player.position.set(0,5,0); velocity.y = 0; }
 
-        function createWall(x, y, z, biom) {
-            const colors = [0xcccccc, 0xa0522d, 0x7cb342];
-            const geom = new THREE.BoxGeometry(2, 8, 2);
-            const mat = new THREE.MeshStandardMaterial({ color: colors[biom] });
-            const wall = new THREE.Mesh(geom, mat);
-            wall.position.set(x, y, z);
-            wall.castShadow = true;
-            wall.receiveShadow = true;
-            wall.userData.isWalkable = true;
-            scene.add(wall);
-        }
-
-        function createPortal() {
-            const geom = new THREE.TorusGeometry(2, 0.5, 16, 100);
-            const mat = new THREE.MeshStandardMaterial({ 
-                color: 0x00ff00, 
-                emissive: 0x00aa00,
-                metalness: 0.8
-            });
-            const portal = new THREE.Mesh(geom, mat);
-            portal.position.set((Math.random() - 0.5) * 30, 25, (Math.random() - 0.5) * 30);
-            portal.castShadow = true;
-            portal.userData.isPortal = true;
-            scene.add(portal);
-        }
-
-        function onMouseMove(e) {
-            if (document.pointerLockElement) {
-                camera.rotation.order = 'YXZ';
-                camera.rotation.y -= e.movementX * 0.01;
-                camera.rotation.x -= e.movementY * 0.01;
-                
-                const maxX = Math.PI / 2;
-                if (camera.rotation.x > maxX) camera.rotation.x = maxX;
-                if (camera.rotation.x < -maxX) camera.rotation.x = -maxX;
-            }
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-
-            // Movement
-            const speed = 0.2;
-            if (keys['w']) chicken.position.z -= speed;
-            if (keys['s']) chicken.position.z += speed;
-            if (keys['a']) chicken.position.x -= speed;
-            if (keys['d']) chicken.position.x += speed;
-            if (keys[' '] && canJump) {
-                chicken.velocity.y = 0.5;
-                canJump = false;
-            }
-
-            // Gravity
-            chicken.velocity.y -= 0.01;
-            chicken.position.y += chicken.velocity.y;
-
-            // Collision detection
-            let onGround = false;
-            scene.children.forEach(obj => {
-                if (obj.userData.isWalkable && obj !== chicken) {
-                    const dist = chicken.position.distanceTo(obj.position);
-                    if (dist < 3 && chicken.position.y >= obj.position.y - 1) {
-                        chicken.position.y = obj.position.y + 1;
-                        chicken.velocity.y = 0;
-                        onGround = true;
-                        canJump = true;
-                    }
-                }
-                
-                // Portal collision
-                if (obj.userData.isPortal) {
-                    const dist = chicken.position.distanceTo(obj.position);
-                    if (dist < 3) {
-                        levelComplete = true;
-                        document.getElementById('nextLevel').style.display = 'block';
-                    }
-                }
-            });
-
-            // Rotation towards movement
-            if (keys['w'] || keys['s'] || keys['a'] || keys['d']) {
-                chicken.rotation.x += 0.05;
-            }
-
-            // Camera follow
-            const cameraOffset = new THREE.Vector3(0, 3, 8);
-            cameraOffset.applyAxisAngle(new THREE.Vector3(0, 1, 0), camera.rotation.y);
-            camera.position.lerp(chicken.position.clone().add(cameraOffset), 0.1);
-            camera.lookAt(chicken.position.clone().add(new THREE.Vector3(0, 1, 0)));
-
-            // Reset on fall
-            if (chicken.position.y < -50) {
-                loadLevel(currentLevel);
-            }
-
-            renderer.render(scene, camera);
-        }
-
-        // Next level
-        window.addEventListener('keydown', e => {
-            if (e.key === ' ' && levelComplete && currentLevel < 30) {
-                currentLevel++;
-                document.getElementById('nextLevel').style.display = 'none';
-                loadLevel(currentLevel);
-            } else if (e.key === ' ' && levelComplete && currentLevel === 30) {
-                alert('🎉 Game Complete! All 30 levels finished!');
-                currentLevel = 1;
-                document.getElementById('nextLevel').style.display = 'none';
-                loadLevel(currentLevel);
-            }
-        });
-
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        init();
-    </script>
+    if (camMode === 1) {
+        player.visible = false;
+        camera.position.copy(player.position).add(new THREE.Vector3(0, 1.2, 0));
+        camera.rotation.set(pitch, yaw, 0, 'YXZ');
+    } else {
+        player.visible = true;
+        let dist = camMode === 2 ? -5 : 6;
+        let offset = new THREE.Vector3(0, 2, dist).applyQuaternion(player.quaternion);
+        camera.position.copy(player.position).add(offset);
+        camera.lookAt(player.position.clone().add(new THREE.Vector3(0, 1, 0)));
+    }
+    renderer.render(scene, camera);
+}
+</script>
 </body>
 </html>
+<style>
+    #aiChatContainer {
+        position: absolute;
+        bottom: 80px;
+        right: 20px;
+        width: 300px;
+        background: rgba(0, 0, 0, 0.85);
+        border: 2px solid #9b59b6;
+        border-radius: 15px;
+        display: flex;
+        flex-direction: column;
+        z-index: 1000;
+        box-shadow: 0 0 15px rgba(155, 89, 182, 0.5);
+    }
+    #chatHeader {
+        background: #9b59b6;
+        color: white;
+        padding: 10px;
+        font-weight: bold;
+        text-align: center;
+        border-radius: 12px 12px 0 0;
+        font-size: 14px;
+    }
+    #chatBox {
+        height: 200px;
+        overflow-y: auto;
+        padding: 10px;
+        color: #eee;
+        font-size: 13px;
+        line-height: 1.4;
+    }
+    #chatInputAI {
+        border: none;
+        padding: 12px;
+        background: #222;
+        color: #00ff00;
+        outline: none;
+        border-radius: 0 0 15px 15px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .ai-msg { color: #f1c40f; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+    .user-msg { color: #3498db; text-align: right; margin-bottom: 10px; font-style: italic; }
+</style>
+
+<div id="aiChatContainer">
+    <div id="chatHeader">📕 USA Red Book AI Guide</div>
+    <div id="chatBox" id="chatBox">
+        <div class="ai-msg">AI: Hello! You can ask me anything about endangered animals and plants in the USA. I'm here to help!</div>
+    </div>
+    <input type="text" id="chatInputAI" placeholder="Type your question here...">
+</div>
+
+<script>
+    // Update Tutorial Text
+    const tutList = document.querySelector('.tut-page');
+    if(tutList) {
+        const aiInfo = document.createElement('p');
+        aiInfo.innerHTML = "6. <b>ASK AI</b>: You can ask any questions about the USA Red Book (endangered species) in the chat!";
+        aiInfo.style.color = "#9b59b6";
+        tutList.insertBefore(aiInfo, tutList.querySelector('hr'));
+    }
+
+    const chatInputAI = document.getElementById('chatInputAI');
+    const chatBox = document.getElementById('chatBox');
+
+    const redBookKnowledge = {
+        animals: "The USA protects many species like the Florida Panther, California Condor, and the Gray Wolf under the Endangered Species Act.",
+        plants: "Endangered US plants include the Western Prairie Fringed Orchid, many Hawaiian flowers, and various desert cacti.",
+        threats: "The main threats to American wildlife are habitat loss, pollution, and climate change.",
+        panther: "The Florida Panther is one of the rarest mammals in the USA, living primarily in the forests and swamps of South Florida.",
+        condor: "The California Condor is the largest North American land bird. It became nearly extinct but is now being reintroduced to the wild.",
+        law: "The Endangered Species Act of 1973 is the primary law in the USA for protecting imperiled species.",
+        alaska: "In Alaska, species like the Polar Bear and Beluga Whale are of great concern due to melting ice.",
+        thanks: "You're welcome! I hope you enjoy the game and learn more about nature!",
+        hello: "Hi there! Ready to learn about the Red Book of America? Just ask!",
+        default: "That's a great question! In the USA Red Book (Endangered Species Act), we track thousands of animals and plants. Could you be more specific? For example, ask about 'animals', 'plants', or 'why' they are endangered."
+    };
+
+    chatInputAI.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && chatInputAI.value.trim() !== "") {
+            const question = chatInputAI.value.toLowerCase();
+            
+            // User message
+            const uDiv = document.createElement('div');
+            uDiv.className = 'user-msg';
+            uDiv.innerText = "You: " + chatInputAI.value;
+            chatBox.appendChild(uDiv);
+
+            // AI Logic
+            setTimeout(() => {
+                const aDiv = document.createElement('div');
+                aDiv.className = 'ai-msg';
+                let response = redBookKnowledge.default;
+
+                if(question.includes("animal") || question.includes("creature")) response = redBookKnowledge.animals;
+                else if(question.includes("plant") || question.includes("flower") || question.includes("grass")) response = redBookKnowledge.plants;
+                else if(question.includes("why") || question.includes("reason") || question.includes("threat")) response = redBookKnowledge.threats;
+                else if(question.includes("panther")) response = redBookKnowledge.panther;
+                else if(question.includes("condor") || question.includes("bird")) response = redBookKnowledge.condor;
+                else if(question.includes("law") || question.includes("act")) response = redBookKnowledge.law;
+                else if(question.includes("alaska") || question.includes("ice")) response = redBookKnowledge.alaska;
+                else if(question.includes("thank")) response = redBookKnowledge.thanks;
+                else if(question.includes("hi") || question.includes("hello")) response = redBookKnowledge.hello;
+
+                aDiv.innerText = "AI: " + response;
+                chatBox.appendChild(aDiv);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }, 600);
+
+            chatInputAI.value = "";
+            e.stopPropagation();
+        }
+    });
+
+    // Prevent player from jumping when typing in chat
+    chatInputAI.addEventListener('focus', () => { window.onkeydown = null; });
+    chatInputAI.addEventListener('blur', () => {
+        window.onkeydown = (e) => {
+            keys[e.code] = true;
+            if(e.code === 'KeyM') { document.getElementById('menu').style.display = 'flex'; document.exitPointerLock(); }
+            if(e.code === 'KeyB') document.body.requestPointerLock();
+            if(e.code === 'KeyC') {
+                camMode = (camMode + 1) % 3;
+                document.getElementById('camStatus').innerText = "Camera: " + ["3rd Person", "1st Person", "Front View"][camMode];
+            }
+        };
+    });
+</script>
