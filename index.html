@@ -422,3 +422,132 @@ function animate() {
 </script>
 </body>
 </html>
+<style>
+    #aiChatContainer {
+        position: absolute;
+        bottom: 80px;
+        right: 20px;
+        width: 300px;
+        background: rgba(0, 0, 0, 0.85);
+        border: 2px solid #9b59b6;
+        border-radius: 15px;
+        display: flex;
+        flex-direction: column;
+        z-index: 1000;
+        box-shadow: 0 0 15px rgba(155, 89, 182, 0.5);
+    }
+    #chatHeader {
+        background: #9b59b6;
+        color: white;
+        padding: 10px;
+        font-weight: bold;
+        text-align: center;
+        border-radius: 12px 12px 0 0;
+        font-size: 14px;
+    }
+    #chatBox {
+        height: 200px;
+        overflow-y: auto;
+        padding: 10px;
+        color: #eee;
+        font-size: 13px;
+        line-height: 1.4;
+    }
+    #chatInputAI {
+        border: none;
+        padding: 12px;
+        background: #222;
+        color: #00ff00;
+        outline: none;
+        border-radius: 0 0 15px 15px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .ai-msg { color: #f1c40f; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+    .user-msg { color: #3498db; text-align: right; margin-bottom: 10px; font-style: italic; }
+</style>
+
+<div id="aiChatContainer">
+    <div id="chatHeader">📕 USA Red Book AI Guide</div>
+    <div id="chatBox" id="chatBox">
+        <div class="ai-msg">AI: Hello! You can ask me anything about endangered animals and plants in the USA. I'm here to help!</div>
+    </div>
+    <input type="text" id="chatInputAI" placeholder="Type your question here...">
+</div>
+
+<script>
+    // Update Tutorial Text
+    const tutList = document.querySelector('.tut-page');
+    if(tutList) {
+        const aiInfo = document.createElement('p');
+        aiInfo.innerHTML = "6. <b>ASK AI</b>: You can ask any questions about the USA Red Book (endangered species) in the chat!";
+        aiInfo.style.color = "#9b59b6";
+        tutList.insertBefore(aiInfo, tutList.querySelector('hr'));
+    }
+
+    const chatInputAI = document.getElementById('chatInputAI');
+    const chatBox = document.getElementById('chatBox');
+
+    const redBookKnowledge = {
+        animals: "The USA protects many species like the Florida Panther, California Condor, and the Gray Wolf under the Endangered Species Act.",
+        plants: "Endangered US plants include the Western Prairie Fringed Orchid, many Hawaiian flowers, and various desert cacti.",
+        threats: "The main threats to American wildlife are habitat loss, pollution, and climate change.",
+        panther: "The Florida Panther is one of the rarest mammals in the USA, living primarily in the forests and swamps of South Florida.",
+        condor: "The California Condor is the largest North American land bird. It became nearly extinct but is now being reintroduced to the wild.",
+        law: "The Endangered Species Act of 1973 is the primary law in the USA for protecting imperiled species.",
+        alaska: "In Alaska, species like the Polar Bear and Beluga Whale are of great concern due to melting ice.",
+        thanks: "You're welcome! I hope you enjoy the game and learn more about nature!",
+        hello: "Hi there! Ready to learn about the Red Book of America? Just ask!",
+        default: "That's a great question! In the USA Red Book (Endangered Species Act), we track thousands of animals and plants. Could you be more specific? For example, ask about 'animals', 'plants', or 'why' they are endangered."
+    };
+
+    chatInputAI.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && chatInputAI.value.trim() !== "") {
+            const question = chatInputAI.value.toLowerCase();
+            
+            // User message
+            const uDiv = document.createElement('div');
+            uDiv.className = 'user-msg';
+            uDiv.innerText = "You: " + chatInputAI.value;
+            chatBox.appendChild(uDiv);
+
+            // AI Logic
+            setTimeout(() => {
+                const aDiv = document.createElement('div');
+                aDiv.className = 'ai-msg';
+                let response = redBookKnowledge.default;
+
+                if(question.includes("animal") || question.includes("creature")) response = redBookKnowledge.animals;
+                else if(question.includes("plant") || question.includes("flower") || question.includes("grass")) response = redBookKnowledge.plants;
+                else if(question.includes("why") || question.includes("reason") || question.includes("threat")) response = redBookKnowledge.threats;
+                else if(question.includes("panther")) response = redBookKnowledge.panther;
+                else if(question.includes("condor") || question.includes("bird")) response = redBookKnowledge.condor;
+                else if(question.includes("law") || question.includes("act")) response = redBookKnowledge.law;
+                else if(question.includes("alaska") || question.includes("ice")) response = redBookKnowledge.alaska;
+                else if(question.includes("thank")) response = redBookKnowledge.thanks;
+                else if(question.includes("hi") || question.includes("hello")) response = redBookKnowledge.hello;
+
+                aDiv.innerText = "AI: " + response;
+                chatBox.appendChild(aDiv);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }, 600);
+
+            chatInputAI.value = "";
+            e.stopPropagation();
+        }
+    });
+
+    // Prevent player from jumping when typing in chat
+    chatInputAI.addEventListener('focus', () => { window.onkeydown = null; });
+    chatInputAI.addEventListener('blur', () => {
+        window.onkeydown = (e) => {
+            keys[e.code] = true;
+            if(e.code === 'KeyM') { document.getElementById('menu').style.display = 'flex'; document.exitPointerLock(); }
+            if(e.code === 'KeyB') document.body.requestPointerLock();
+            if(e.code === 'KeyC') {
+                camMode = (camMode + 1) % 3;
+                document.getElementById('camStatus').innerText = "Camera: " + ["3rd Person", "1st Person", "Front View"][camMode];
+            }
+        };
+    });
+</script>
