@@ -1,0 +1,115 @@
+🧱 Block Parkour 3D
+
+Block Parkour 3D is a first-person 3D parkour game inspired by Minecraft-style voxel worlds.
+The goal is simple: move forward, time your jumps, don’t fall into lava — but mastering it takes skill.
+
+The game focuses on smooth movement, precise jumping, and that satisfying feeling when you finally land a hard jump.
+
+🎮 What the game is about
+
+You play in a blocky 3D world made of grass, stone, platforms, and lava.
+Each level challenges your movement skills with longer jumps, higher platforms, and trickier layouts.
+
+There are 20 levels, and every new one is:
+
+longer than the last
+
+harder to complete
+
+more demanding in timing and control
+
+🕹 Controls
+
+W A S D — Move
+
+Mouse — Look around (360° camera)
+
+Shift — Run
+
+Space — Jump
+
+Jumping works like classic parkour games:
+
+Normal jump clears 1 block
+
+Running jump clears up to 2 blocks
+
+👤 Character & Customization
+
+Before starting the game, you can choose:
+
+Gender (boy or girl)
+
+Clothing style (classic, hoodie, parkour)
+
+The character uses a simple blocky design, keeping everything clean and readable while playing in first person.
+
+🌋 Levels & Gameplay Elements
+
+Each level can include:
+
+Floating platforms
+
+Gaps and vertical parkour sections
+
+Lava (instant danger)
+
+Checkpoints to save progress
+
+A portal that marks the end of the level
+
+The further you go, the more the game pushes your accuracy and patience.
+
+🔊 Sound Design
+
+The game uses simple but expressive sound effects:
+
+Soft grass footsteps while walking and running
+
+A quick “whoosh” when jumping
+
+A solid landing sound
+
+Ambient lava sound near hazards
+
+Sounds are there to give feedback without being distracting.
+
+🛠 Tech Overview
+
+JavaScript
+
+Three.js for 3D rendering
+
+HTML & CSS
+
+Runs directly in the browser
+
+No installation needed — just open the project and play.
+
+🎯 Project Goal
+
+This project was made to practice:
+
+3D movement and camera control
+
+Parkour-style physics
+
+Level progression design
+
+Clean, simple gameplay mechanics
+
+It’s meant to feel fun, responsive, and challenging without being frustrating.
+
+🚀 Future Ideas
+
+Possible next steps:
+
+More level variety
+
+Better collision handling
+
+Timer and death counter
+
+Third-person camera mode
+
+Visual effects for lava and portals
